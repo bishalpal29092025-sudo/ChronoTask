@@ -38,15 +38,18 @@ export default function DashboardPage() {
   const [error, setError] = useState("");
 
   const [recentTasks, setRecentTasks] = useState<RecentTask[]>([]);
-
   const [activities, setActivities] = useState<Activity[]>([]);
-
   const [weeklyActivity, setWeeklyActivity] = useState<
     WeeklyActivity[]
   >([]);
 
-  // Used to update active activity durations without calling
-  // Date.now() directly during render.
+  const [showAllActivities, setShowAllActivities] = useState(false);
+  const [showAllTasks, setShowAllTasks] = useState(false);
+
+  /*
+   * Used to update active activity durations without
+   * calling Date.now() directly during render.
+   */
   const [currentTime, setCurrentTime] = useState(() =>
     Date.now(),
   );
@@ -93,10 +96,9 @@ export default function DashboardPage() {
   }, []);
 
   /*
-   * Keep the current time updated every second.
+   * Keep current time updated every second.
    *
-   * This allows active activity durations to update live
-   * without calling Date.now() directly during render.
+   * This allows active activity durations to update live.
    */
   useEffect(() => {
     const interval = window.setInterval(() => {
@@ -107,6 +109,45 @@ export default function DashboardPage() {
       window.clearInterval(interval);
     };
   }, []);
+
+  /*
+   * Format activity duration.
+   */
+  const formatDuration = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+
+    const minutes = Math.floor(
+      (totalSeconds % 3600) / 60,
+    );
+
+    const seconds = totalSeconds % 60;
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m`;
+    }
+
+    if (minutes > 0) {
+      return `${minutes}m ${seconds}s`;
+    }
+
+    return `${seconds}s`;
+  };
+
+  /*
+   * Only show the latest 5 activities unless
+   * the user chooses to view everything.
+   */
+  const visibleActivities = showAllActivities
+    ? activities
+    : activities.slice(0, 5);
+
+  /*
+   * Only show the latest 5 tasks unless
+   * the user chooses to view everything.
+   */
+  const visibleTasks = showAllTasks
+    ? recentTasks
+    : recentTasks.slice(0, 5);
 
   return (
     <section className="min-h-screen p-6 md:p-8">
@@ -122,8 +163,8 @@ export default function DashboardPage() {
           </h1>
 
           <p className="mt-2 max-w-2xl text-zinc-400">
-            See your tasks, tracked time, and daily progress in one
-            place.
+            See your tasks, tracked time, and daily progress in
+            one place.
           </p>
         </div>
 
@@ -149,18 +190,36 @@ export default function DashboardPage() {
         <div className="mt-6 grid gap-6 lg:grid-cols-3">
           {/* Recent Tasks */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6 lg:col-span-2">
-            <div>
-              <h2 className="text-lg font-semibold text-white">
-                Recent Tasks
-              </h2>
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 className="text-lg font-semibold text-white">
+                  Recent Tasks
+                </h2>
 
-              <p className="mt-1 text-sm text-zinc-400">
-                Your latest work.
-              </p>
+                <p className="mt-1 text-sm text-zinc-400">
+                  Your latest work.
+                </p>
+              </div>
+
+              {recentTasks.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowAllTasks(
+                      (current) => !current,
+                    )
+                  }
+                  className="shrink-0 text-xs font-medium text-cyan-400 transition-colors hover:text-cyan-300"
+                >
+                  {showAllTasks
+                    ? "Show less ↑"
+                    : "View all →"}
+                </button>
+              )}
             </div>
 
             <div className="mt-6 space-y-3">
-              {recentTasks.length === 0 ? (
+              {visibleTasks.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center">
                   <p className="text-sm text-zinc-500">
                     No tasks yet.
@@ -171,35 +230,56 @@ export default function DashboardPage() {
                   </p>
                 </div>
               ) : (
-                recentTasks.map((task) => (
+                visibleTasks.map((task) => (
                   <div
                     key={task.id}
                     className="group rounded-xl border border-white/10 bg-black/20 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/20 hover:bg-white/5"
                   >
-                    <p className="font-medium text-white transition-colors group-hover:text-cyan-300">
-                      {task.title}
-                    </p>
+                    <div className="flex items-center justify-between gap-4">
+                      <p className="min-w-0 truncate font-medium text-white transition-colors group-hover:text-cyan-300">
+                        {task.title}
+                      </p>
 
-                    <span
-                      className={`mt-2 inline-flex rounded-full px-2.5 py-1 text-xs font-medium ${
-                        task.status === "Completed"
-                          ? "bg-emerald-400/10 text-emerald-400"
-                          : task.status === "In Progress"
-                            ? "bg-violet-400/10 text-violet-400"
-                            : "bg-amber-400/10 text-amber-400"
-                      }`}
-                    >
-                      {task.status}
-                    </span>
+                      <span
+                        className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-medium ${
+                          task.status === "Completed"
+                            ? "bg-emerald-400/10 text-emerald-400"
+                            : task.status ===
+                                "In Progress"
+                              ? "bg-violet-400/10 text-violet-400"
+                              : "bg-amber-400/10 text-amber-400"
+                        }`}
+                      >
+                        {task.status}
+                      </span>
+                    </div>
                   </div>
                 ))
               )}
             </div>
+
+            {showAllTasks && recentTasks.length > 5 && (
+              <div className="mt-4 text-center">
+                <p className="text-xs text-zinc-600">
+                  Showing all {recentTasks.length} tasks
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setShowAllTasks(false)
+                  }
+                  className="mt-2 text-xs font-medium text-cyan-400 transition-colors hover:text-cyan-300"
+                >
+                  Show less ↑
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Today's Activity */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-            <div className="flex items-start justify-between">
+            <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 className="text-lg font-semibold text-white">
                   Today&apos;s Activity
@@ -210,13 +290,13 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-400">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-cyan-400/10 text-cyan-400">
                 ◷
               </div>
             </div>
 
             <div className="mt-6">
-              {activities.length === 0 ? (
+              {visibleActivities.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-white/10 bg-black/10 px-4 py-8 text-center">
                   <p className="text-sm text-zinc-500">
                     No activity today.
@@ -227,130 +307,158 @@ export default function DashboardPage() {
                   </p>
                 </div>
               ) : (
-                <div className="relative space-y-0">
-                  {activities.map((activity, index) => {
-                    const started = new Date(
-                      activity.startedAt,
-                    );
-
-                    const ended = activity.endedAt
-                      ? new Date(activity.endedAt)
-                      : null;
-
-                    const formatTime = (date: Date) =>
-                      date.toLocaleTimeString([], {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      });
-
-                    /*
-                     * Completed activities use their stored
-                     * start/end timestamps.
-                     *
-                     * Active activities use currentTime,
-                     * which is updated every second by state.
-                     */
-                    const durationSeconds = ended
-                      ? Math.max(
-                          0,
-                          Math.floor(
-                            (ended.getTime() -
-                              started.getTime()) /
-                              1000,
-                          ),
-                        )
-                      : Math.max(
-                          0,
-                          Math.floor(
-                            (currentTime -
-                              started.getTime()) /
-                              1000,
-                          ),
+                <>
+                  <div className="relative space-y-0">
+                    {visibleActivities.map(
+                      (
+                        activity,
+                        index,
+                      ) => {
+                        const started = new Date(
+                          activity.startedAt,
                         );
 
-                    const hours = Math.floor(
-                      durationSeconds / 3600,
-                    );
+                        const ended =
+                          activity.endedAt
+                            ? new Date(
+                                activity.endedAt,
+                              )
+                            : null;
 
-                    const minutes = Math.floor(
-                      (durationSeconds % 3600) / 60,
-                    );
+                        const formatTime = (
+                          date: Date,
+                        ) =>
+                          date.toLocaleTimeString(
+                            [],
+                            {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            },
+                          );
 
-                    const seconds = durationSeconds % 60;
+                        /*
+                         * Completed activities use their
+                         * stored timestamps.
+                         *
+                         * Active activities use currentTime
+                         * so the duration updates every second.
+                         */
+                        const durationSeconds =
+                          ended
+                            ? Math.max(
+                                0,
+                                Math.floor(
+                                  (ended.getTime() -
+                                    started.getTime()) /
+                                    1000,
+                                ),
+                              )
+                            : Math.max(
+                                0,
+                                Math.floor(
+                                  (currentTime -
+                                    started.getTime()) /
+                                    1000,
+                                ),
+                              );
 
-                    const duration =
-                      hours > 0
-                        ? `${hours}h ${minutes}m`
-                        : minutes > 0
-                          ? `${minutes}m ${seconds}s`
-                          : `${seconds}s`;
+                        const duration =
+                          formatDuration(
+                            durationSeconds,
+                          );
 
-                    const isActive = !ended;
+                        const isActive = !ended;
 
-                    return (
-                      <div
-                        key={activity.id}
-                        className="relative flex gap-4 pb-6 last:pb-0"
-                      >
-                        {/* Timeline connector */}
-                        {index < activities.length - 1 && (
-                          <div className="absolute left-[7px] top-4 h-full w-px bg-white/10" />
-                        )}
-
-                        {/* Timeline indicator */}
-                        <div className="relative z-10 mt-1">
+                        return (
                           <div
-                            className={`h-4 w-4 rounded-full border-4 border-[#111116] ${
-                              isActive
-                                ? "bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)]"
-                                : "bg-zinc-600"
-                            }`}
-                          />
-                        </div>
+                            key={activity.id}
+                            className="relative flex gap-4 pb-6 last:pb-0"
+                          >
+                            {/* Timeline connector */}
+                            {index <
+                              visibleActivities.length -
+                                1 && (
+                              <div className="absolute left-[7px] top-4 h-full w-px bg-white/10" />
+                            )}
 
-                        {/* Activity Card */}
-                        <div className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/20 hover:bg-white/5">
-                          <div className="flex items-start justify-between gap-4">
-                            <div className="min-w-0">
-                              <p className="truncate text-sm font-medium text-white">
-                                {activity.task}
-                              </p>
-
-                              <p className="mt-1 text-xs text-zinc-500">
-                                {formatTime(started)} —{" "}
-                                {ended
-                                  ? formatTime(ended)
-                                  : "Active"}
-                              </p>
+                            {/* Timeline indicator */}
+                            <div className="relative z-10 mt-1">
+                              <div
+                                className={`h-4 w-4 rounded-full border-4 border-[#111116] ${
+                                  isActive
+                                    ? "bg-cyan-400 shadow-[0_0_12px_rgba(34,211,238,0.8)]"
+                                    : "bg-zinc-600"
+                                }`}
+                              />
                             </div>
 
-                            {isActive && (
-                              <span className="shrink-0 rounded-full bg-cyan-400/10 px-2.5 py-1 text-xs font-medium text-cyan-400">
-                                Running
-                              </span>
-                            )}
-                          </div>
+                            {/* Activity Card */}
+                            <div className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/20 p-4 transition-all duration-200 hover:-translate-y-0.5 hover:border-cyan-400/20 hover:bg-white/5">
+                              <div className="flex items-start justify-between gap-4">
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-medium text-white">
+                                    {activity.task}
+                                  </p>
 
-                          <div className="mt-3 flex items-center gap-2 text-xs">
-                            <span className="text-zinc-500">
-                              Duration
-                            </span>
+                                  <p className="mt-1 text-xs text-zinc-500">
+                                    {formatTime(
+                                      started,
+                                    )}{" "}
+                                    —{" "}
+                                    {ended
+                                      ? formatTime(
+                                          ended,
+                                        )
+                                      : "Active"}
+                                  </p>
+                                </div>
 
-                            <span
-                              className={
-                                isActive
-                                  ? "font-medium text-cyan-400"
-                                  : "font-medium text-zinc-300"
-                              }
-                            >
-                              {duration}
-                            </span>
+                                {isActive && (
+                                  <span className="shrink-0 rounded-full bg-cyan-400/10 px-2.5 py-1 text-xs font-medium text-cyan-400">
+                                    Running
+                                  </span>
+                                )}
+                              </div>
+
+                              <div className="mt-3 flex items-center gap-2 text-xs">
+                                <span className="text-zinc-500">
+                                  Duration
+                                </span>
+
+                                <span
+                                  className={
+                                    isActive
+                                      ? "font-medium text-cyan-400"
+                                      : "font-medium text-zinc-300"
+                                  }
+                                >
+                                  {duration}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
+                        );
+                      },
+                    )}
+                  </div>
+
+                  {/* View all activities */}
+                  {activities.length > 5 && (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowAllActivities(
+                          (current) => !current,
+                        )
+                      }
+                      className="mt-5 w-full rounded-xl border border-white/10 bg-black/10 px-4 py-3 text-xs font-medium text-cyan-400 transition-all hover:border-cyan-400/20 hover:bg-cyan-400/5 hover:text-cyan-300"
+                    >
+                      {showAllActivities
+                        ? "Show less ↑"
+                        : `View all ${activities.length} activities →`}
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>
