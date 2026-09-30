@@ -234,15 +234,29 @@ export default function TasksPage() {
       return;
     }
 
+    const activeTaskId = activeTimer.taskId;
+
     try {
       setTimerLoading(true);
       setError("");
 
-      const response = await fetch(`/api/tasks/${taskId}/timer/stop`, {
+      const response = await fetch(`/api/tasks/${activeTaskId}/timer/stop`, {
         method: "POST",
       });
 
       const data = await response.json();
+
+      /*
+       * The timer may already have been stopped by another tab
+       * or by a previous request. In that case, synchronize the
+       * frontend instead of showing a confusing error.
+       */
+      if (response.status === 404) {
+        setActiveTimer(null);
+        setElapsedSeconds(0);
+
+        return;
+      }
 
       if (!response.ok) {
         throw new Error(data.message || "Failed to stop timer.");
@@ -253,7 +267,8 @@ export default function TasksPage() {
 
       setTaskTotals((currentTotals) => ({
         ...currentTotals,
-        [taskId]: (currentTotals[taskId] || 0) + data.durationSeconds,
+        [activeTaskId]:
+          (currentTotals[activeTaskId] || 0) + data.durationSeconds,
       }));
     } catch (error) {
       console.error(error);
