@@ -1,31 +1,74 @@
 # ChronoTask
 
-> A full-stack task management and time tracking application built with Next.js, TypeScript, MongoDB, and Mongoose.
+> A full-stack task management and time-tracking application built with Next.js, TypeScript, MongoDB, and Mongoose.
 
-ChronoTask helps users manage their tasks, track time spent on individual tasks, and understand their productivity through a real-time dashboard.
+ChronoTask helps users manage their tasks, track time spent on individual tasks, and understand their productivity through a live productivity dashboard.
+
+## 🌐 Live Project
+
+**Live Demo:** Add your Vercel URL here
+
+**Repository:** `https://github.com/bishalpal29092025-sudo/ChronoTask`
 
 ---
 
 ## ✨ Features
 
-- 🔐 Secure user authentication
-- 👤 User-specific task access
-- 📝 Create, update, and delete tasks
-- 📌 Task status management
+### 🔐 Authentication & Security
+- User signup and login
+- Auth.js credential-based authentication
+- Password hashing with bcryptjs
+- JWT-based sessions
+- Protected API routes
+- User-specific data access
+- Server-side authorization and task ownership checks
+- Zod request validation
+- Meaningful HTTP status codes and error handling
+
+### 📝 Task Management
+- Create tasks
+- Update tasks
+- Delete tasks
+- Task descriptions
+- Task status management:
   - Pending
   - In Progress
   - Completed
-- ⏱️ Real-time task time tracking
-- 💾 Persistent timer sessions using MongoDB
-- 🔄 Multi-tab timer synchronization
-- 🚫 Server-side prevention of multiple active timers
-- 📊 7-day productivity chart
-- 📅 Daily activity timeline
-- 📈 Productivity statistics
-- 🔒 Protected API routes
-- ✅ Request validation and error handling
-- 📱 Responsive dark-themed UI
-- 🎨 Modern animated dashboard interface
+- User-specific task access
+- Recent task dashboard view
+
+### ⏱️ Time Tracking
+- Start and stop timers for individual tasks
+- Persistent timer sessions using MongoDB
+- Server-side `startedAt` / `endedAt` timestamps
+- Live elapsed-time display in the frontend
+- Timer state survives page refreshes and navigation
+- Multi-tab timer synchronization
+- Backend prevention of multiple active timers
+- Persistent time-log history
+- Per-user and per-task time tracking
+
+### 📊 Productivity Dashboard
+- Total tasks
+- Completed tasks
+- In-progress tasks
+- Pending tasks
+- Tracked time today
+- Tasks worked on today
+- Today's activity timeline
+- Recent tasks
+- 7-day productivity chart
+- Dashboard data calculated from actual MongoDB records
+
+### 🎨 User Experience
+- Responsive dark-themed interface
+- Modern SaaS-style UI
+- Animated statistics
+- Framer Motion interactions
+- Productivity visualization with Recharts
+- Responsive task and dashboard layouts
+- Animated landing page
+- Dedicated signup and login pages
 
 ---
 
@@ -51,46 +94,51 @@ ChronoTask helps users manage their tasks, track time spent on individual tasks,
 
 - MongoDB
 - Mongoose
+- MongoDB Atlas
 
 ### Development & Deployment
 
 - Git
 - GitHub
 - Vercel
-- MongoDB Atlas
 
 ---
 
 ## 🏗️ Architecture
 
-    ┌───────────────────────────────┐
-    │          Next.js UI           │
-    │      React + TypeScript       │
-    └───────────────┬───────────────┘
-                    │
-                    ▼
-    ┌───────────────────────────────┐
-    │       Next.js Route Handlers   │
-    │            REST APIs           │
-    └───────────────┬───────────────┘
-                    │
-          ┌─────────┼─────────┐
-          │         │         │
-          ▼         ▼         ▼
-       Auth API  Task API  Timer API
-          │         │         │
-          └─────────┼─────────┘
-                    │
-                    ▼
-    ┌───────────────────────────────┐
-    │            Mongoose           │
-    └───────────────┬───────────────┘
-                    │
-                    ▼
-    ┌───────────────────────────────┐
-    │            MongoDB            │
-    │      Users / Tasks / Logs     │
-    └───────────────────────────────┘
+```text
+                         ChronoTask
+                              │
+              ┌───────────────┴───────────────┐
+              │                               │
+        Next.js Frontend                 Next.js Backend
+        React + TypeScript              Route Handlers
+        Tailwind CSS                    REST APIs
+        Framer Motion                        │
+              │                              │
+              └──────────────┬───────────────┘
+                             │
+                    ┌────────┴────────┐
+                    │                 │
+                 Auth.js          Application APIs
+                    │                 │
+                    │        ┌────────┼────────┐
+                    │        │        │        │
+                    │      Tasks     Timer  Dashboard
+                    │        │        │        │
+                    └────────┴────────┼────────┘
+                                     │
+                                  Mongoose
+                                     │
+                                     ▼
+                               MongoDB Atlas
+                                     │
+                         ┌───────────┼───────────┐
+                         │           │           │
+                       Users       Tasks      TimeLogs
+```
+
+The application uses Next.js for both the frontend and backend. Next.js Route Handlers expose protected REST-style APIs, while Mongoose provides the database model layer.
 
 ---
 
@@ -98,33 +146,56 @@ ChronoTask helps users manage their tasks, track time spent on individual tasks,
 
 ChronoTask uses MongoDB as the source of truth for active timers.
 
-When a user starts a timer:
+### Starting a timer
 
-    User clicks Start
-           ↓
-    POST /api/tasks/[id]/timer
-           ↓
-    Server verifies authentication
-           ↓
-    Server verifies task ownership
-           ↓
-    Server checks for existing active timer
-           ↓
-    TimeLog created in MongoDB
-           ↓
-    startedAt stored on the server
+```text
+User clicks Start
+       ↓
+POST /api/tasks/[id]/timer
+       ↓
+Server verifies authentication
+       ↓
+Server verifies task ownership
+       ↓
+Server checks for an existing active timer
+       ↓
+TimeLog created in MongoDB
+       ↓
+startedAt stored on the server
+```
 
-The frontend then calculates the live elapsed time using the stored `startedAt` timestamp.
+The frontend calculates the live elapsed time from the stored `startedAt` timestamp.
 
-This approach allows the timer to:
+### Stopping a timer
+
+```text
+User clicks Stop
+       ↓
+POST /api/tasks/[id]/timer/stop
+       ↓
+Server verifies authentication
+       ↓
+Server verifies task ownership
+       ↓
+Active TimeLog is located
+       ↓
+endedAt is stored
+       ↓
+Duration is calculated
+       ↓
+Updated timer state returned to frontend
+```
+
+This design allows the timer to:
 
 - Survive page refreshes
 - Survive navigation
 - Remain synchronized across browser tabs
-- Continue running independently of React state
-- Maintain accurate elapsed time using server timestamps
+- Continue independently of React's local state
+- Calculate elapsed time from server timestamps
+- Persist completed sessions in MongoDB
 
-The backend also prevents a user from creating multiple active timers simultaneously.
+The backend prevents a user from creating multiple active timers at the same time.
 
 ---
 
@@ -132,23 +203,27 @@ The backend also prevents a user from creating multiple active timers simultaneo
 
 ChronoTask periodically synchronizes the active timer with the backend.
 
-    Browser Tab 1
-          │
-          │ Start Timer
-          ▼
-       MongoDB
-          │
-          ▼
-    Active TimeLog
-          │
-          ▼
-    /api/tasks/timer/active
-          │
-       ┌──┴──┐
-       ▼     ▼
-     Tab 1  Tab 2
+```text
+Browser Tab 1
+      │
+      │ Start / Stop Timer
+      ▼
+   MongoDB
+      │
+      ▼
+ Active TimeLog
+      │
+      ▼
+/api/tasks/timer/active
+      │
+    ┌─┴─┐
+    ▼   ▼
+  Tab 1 Tab 2
+```
 
-This ensures that when a timer is started or stopped in one browser tab, other tabs belonging to the same authenticated user can detect the updated timer state.
+The frontend periodically requests the active timer endpoint and updates its local state.
+
+This keeps multiple browser tabs for the same authenticated user synchronized with the server-side timer state.
 
 ---
 
@@ -156,7 +231,33 @@ This ensures that when a timer is started or stopped in one browser tab, other t
 
 ChronoTask uses Auth.js with credential-based authentication.
 
-User passwords are securely hashed using bcrypt before being stored in MongoDB.
+### Signup flow
+
+```text
+User submits signup form
+        ↓
+POST /api/auth/signup
+        ↓
+Zod validates request
+        ↓
+Email is normalized
+        ↓
+Existing account is checked
+        ↓
+Password is hashed using bcrypt
+        ↓
+User stored in MongoDB
+        ↓
+Account created
+```
+
+Passwords are never stored as plain text.
+
+### Login flow
+
+Auth.js verifies the submitted credentials against the stored bcrypt password hash and creates a JWT-based session.
+
+### Authorization
 
 Protected API routes verify the authenticated user's session before accessing application data.
 
@@ -164,37 +265,43 @@ Task and time-log operations are scoped to the authenticated user's ID.
 
 For example:
 
-    {
-      _id: taskId,
-      userId: session.user.id
-    }
+```ts
+{
+  taskId: taskId,
+  userId: session.user.id
+}
+```
 
-This prevents users from accessing another user's tasks by simply changing a task ID in a request.
+This prevents a user from accessing another user's task simply by changing a task ID in a request.
 
-Unauthenticated requests to protected endpoints return:
+Unauthenticated requests return:
 
-    401 Unauthorized
+```text
+401 Unauthorized
+```
 
 ---
 
 ## 📊 Dashboard
 
-The ChronoTask dashboard provides an overview of the user's productivity.
+The dashboard provides an overview of the user's productivity using real data from MongoDB.
 
-### Dashboard Statistics
+### Dashboard statistics
 
 - Total Tasks
 - Completed Tasks
 - In Progress Tasks
+- Pending Tasks
 - Tracked Time Today
+- Tasks Worked on Today
 
 ### Recent Tasks
 
-Displays the user's most recently created tasks along with their current status.
+The dashboard displays recently created tasks and their current status.
 
 ### Today's Activity
 
-Displays time-tracking sessions from the current day, including:
+The activity timeline displays time-tracking sessions from the current day, including:
 
 - Task name
 - Start time
@@ -214,29 +321,39 @@ No static productivity data is used for the chart.
 
 ### Authentication
 
-    POST /api/auth/signup
-    POST /api/auth/[...nextauth]
+```text
+POST /api/auth/signup
+POST /api/auth/[...nextauth]
+```
 
 ### Tasks
 
-    GET    /api/tasks
-    POST   /api/tasks
-    PUT    /api/tasks/[id]
-    DELETE /api/tasks/[id]
+```text
+GET    /api/tasks
+POST   /api/tasks
+PUT    /api/tasks/[id]
+DELETE /api/tasks/[id]
+```
 
 ### Timer
 
-    POST /api/tasks/[id]/timer
-    POST /api/tasks/[id]/timer/stop
-    GET    /api/tasks/timer/active
+```text
+POST /api/tasks/[id]/timer
+POST /api/tasks/[id]/timer/stop
+GET  /api/tasks/timer/active
+```
 
 ### Time Logs
 
-    GET /api/tasks/timelogs
+```text
+GET /api/tasks/timelogs
+```
 
 ### Dashboard
 
-    GET /api/dashboard
+```text
+GET /api/dashboard
+```
 
 Protected endpoints require an authenticated session.
 
@@ -246,102 +363,112 @@ Protected endpoints require an authenticated session.
 
 ### User
 
-    User
-    ├── _id
-    ├── name
-    ├── email
-    ├── password
-    ├── createdAt
-    └── updatedAt
+```text
+User
+├── _id
+├── name
+├── email
+├── password
+├── createdAt
+└── updatedAt
+```
 
 ### Task
 
-    Task
-    ├── _id
-    ├── userId
-    ├── title
-    ├── description
-    ├── status
-    ├── createdAt
-    └── updatedAt
+```text
+Task
+├── _id
+├── userId
+├── title
+├── description
+├── status
+├── createdAt
+└── updatedAt
+```
 
 ### TimeLog
 
-    TimeLog
-    ├── _id
-    ├── taskId
-    ├── userId
-    ├── startedAt
-    ├── endedAt
-    ├── createdAt
-    └── updatedAt
+```text
+TimeLog
+├── _id
+├── taskId
+├── userId
+├── startedAt
+├── endedAt
+├── createdAt
+└── updatedAt
+```
 
 ---
 
 ## 📁 Project Structure
 
-    chronotask/
-    ├── app/
-    │   ├── (app)/
-    │   │   ├── dashboard/
-    │   │   │   └── page.tsx
-    │   │   ├── tasks/
-    │   │   │   └── page.tsx
-    │   │   └── layout.tsx
-    │   │
-    │   ├── api/
-    │   │   ├── auth/
-    │   │   │   ├── [...nextauth]/
-    │   │   │   │   └── route.ts
-    │   │   │   └── signup/
-    │   │   │       └── route.ts
-    │   │   │
-    │   │   ├── dashboard/
-    │   │   │   └── route.ts
-    │   │   │
-    │   │   └── tasks/
-    │   │       ├── [id]/
-    │   │       │   ├── route.ts
-    │   │       │   └── timer/
-    │   │       │       ├── route.ts
-    │   │       │       └── stop/
-    │   │       │           └── route.ts
-    │   │       ├── route.ts
-    │   │       ├── timer/
-    │   │       │   └── active/
-    │   │       │       └── route.ts
-    │   │       └── timelogs/
-    │   │           └── route.ts
-    │   │
-    │   ├── login/
-    │   │   └── page.tsx
-    │   ├── globals.css
-    │   ├── layout.tsx
-    │   └── page.tsx
-    │
-    ├── components/
-    │   ├── dashboard/
-    │   │   ├── AnimatedStats.tsx
-    │   │   └── ProductivityChart.tsx
-    │   ├── AuthStatus.tsx
-    │   ├── Navbar.tsx
-    │   └── Providers.tsx
-    │
-    ├── lib/
-    │   └── mongodb.ts
-    │
-    ├── models/
-    │   ├── User.ts
-    │   ├── Task.ts
-    │   └── TimeLog.ts
-    │
-    ├── types/
-    │   └── next-auth.d.ts
-    │
-    ├── auth.ts
-    ├── package.json
-    ├── next.config.ts
-    └── README.md
+```text
+chronotask/
+├── app/
+│   ├── (app)/
+│   │   ├── dashboard/
+│   │   │   └── page.tsx
+│   │   ├── tasks/
+│   │   │   └── page.tsx
+│   │   └── layout.tsx
+│   │
+│   ├── api/
+│   │   ├── auth/
+│   │   │   ├── [...nextauth]/
+│   │   │   │   └── route.ts
+│   │   │   └── signup/
+│   │   │       └── route.ts
+│   │   │
+│   │   ├── dashboard/
+│   │   │   └── route.ts
+│   │   │
+│   │   └── tasks/
+│   │       ├── [id]/
+│   │       │   ├── route.ts
+│   │       │   └── timer/
+│   │       │       ├── route.ts
+│   │       │       └── stop/
+│   │       │           └── route.ts
+│   │       ├── route.ts
+│   │       ├── timer/
+│   │       │   └── active/
+│   │       │       └── route.ts
+│   │       └── timelogs/
+│   │           └── route.ts
+│   │
+│   ├── login/
+│   │   └── page.tsx
+│   ├── signup/
+│   │   └── page.tsx
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+│
+├── components/
+│   ├── dashboard/
+│   │   ├── AnimatedStats.tsx
+│   │   └── ProductivityChart.tsx
+│   ├── AuthStatus.tsx
+│   ├── Navbar.tsx
+│   └── Providers.tsx
+│
+├── lib/
+│   └── mongodb.ts
+│
+├── models/
+│   ├── User.ts
+│   ├── Task.ts
+│   └── TimeLog.ts
+│
+├── types/
+│   └── next-auth.d.ts
+│
+├── auth.ts
+├── package.json
+├── next.config.ts
+└── README.md
+```
 
 ---
 
@@ -349,29 +476,39 @@ Protected endpoints require an authenticated session.
 
 ### 1. Clone the repository
 
-    git clone <your-repository-url>
-    cd chronotask
+```bash
+git clone https://github.com/bishalpal29092025-sudo/ChronoTask.git
+cd ChronoTask
+```
 
 ### 2. Install dependencies
 
-    npm install
+```bash
+npm install
+```
 
 ### 3. Configure environment variables
 
-Create a `.env.local` file in the project root.
+Create a `.env.local` file in the project root:
 
-    MONGODB_URI=your_mongodb_connection_string
-    AUTH_SECRET=your_auth_secret
+```env
+MONGODB_URI=your_mongodb_connection_string
+AUTH_SECRET=your_auth_secret
+```
 
 Do not commit `.env.local` to Git.
 
 ### 4. Start the development server
 
-    npm run dev
+```bash
+npm run dev
+```
 
-Open the application at:
+Open:
 
-    http://localhost:3000
+```text
+http://localhost:3000
+```
 
 ---
 
@@ -382,19 +519,22 @@ Open the application at:
 | `MONGODB_URI` | MongoDB database connection string |
 | `AUTH_SECRET` | Secret used by Auth.js for session security |
 
-Never commit production credentials or `.env.local` to the repository.
+Never commit production credentials or `.env.local` to GitHub.
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing & Verification
 
 TypeScript validation:
 
-    npx tsc --noEmit
+```bash
+npx tsc --noEmit
+```
 
 The application has been manually tested for:
 
-- User authentication
+- User signup
+- User login
 - Protected API routes
 - Task creation
 - Task updates
@@ -416,35 +556,43 @@ The application has been manually tested for:
 
 ## 🔒 API Security
 
-ChronoTask protects API routes using authenticated sessions.
-
 ### Unauthenticated requests
 
 Protected endpoints return:
 
-    401 Unauthorized
+```text
+401 Unauthorized
+```
 
 ### Multiple active timers
 
 If a user attempts to start another timer while an active timer already exists, the server returns:
 
-    409 Conflict
+```text
+409 Conflict
+```
 
-Example message:
+Example:
 
-    You already have an active timer.
+```text
+You already have an active timer.
+```
 
 ### Task ownership
 
 Task operations verify both:
 
-    task ID
-
-and:
-
-    authenticated user ID
+```text
+Task ID
++
+Authenticated User ID
+```
 
 This ensures that users can only access and modify their own tasks.
+
+### Validation
+
+Incoming signup and API data is validated before database operations. Invalid requests return appropriate client-error status codes instead of being processed blindly.
 
 ---
 
@@ -452,15 +600,15 @@ This ensures that users can only access and modify their own tasks.
 
 ### Server-Side Source of Truth
 
-Important application state, including active timers and completed time sessions, is persisted on the server.
+Important application state, especially active timers and completed time sessions, is persisted on the server.
 
 ### User Data Isolation
 
-Tasks and time logs are always associated with the authenticated user's ID.
+Tasks and time logs are associated with the authenticated user's ID.
 
-### Real-Time Experience
+### Real-Time User Experience
 
-The frontend provides a live timer display while periodically synchronizing the active timer with the backend.
+The frontend provides a live timer display and periodically synchronizes timer state with the backend.
 
 ### Clean Separation of Responsibilities
 
@@ -477,43 +625,110 @@ The application separates:
 
 ## 💡 Key Technical Highlights
 
-### Persistent Timer
+### 1. Persistent Timer
 
 Timer state is persisted in MongoDB using `TimeLog` documents instead of relying only on browser state.
 
-### Server-Side Timer Validation
+### 2. Server-Side Timer Validation
 
 The backend checks for an existing active timer before creating a new timer session.
 
-### Multi-Tab Synchronization
+### 3. Multi-Tab Synchronization
 
 Multiple browser tabs periodically query the active timer endpoint so that timer state stays synchronized.
 
-### Protected Data Access
+### 4. Protected Data Access
 
 Database queries use the authenticated user's ID to prevent cross-user data access.
 
-### Real-Time Dashboard Data
+### 5. Real-Time Dashboard Data
 
 Dashboard statistics and charts are calculated from actual task and time-log records.
+
+### 6. Production Deployment
+
+The application is deployed on Vercel and connected to MongoDB Atlas. The GitHub repository is connected to Vercel so changes pushed to the `main` branch can trigger a new deployment automatically.
 
 ---
 
 ## 🚀 Deployment
 
-ChronoTask is designed to be deployed using:
+ChronoTask is deployed using:
 
-- Vercel for the Next.js application
-- MongoDB Atlas for the database
+- **Vercel** — Next.js application hosting
+- **MongoDB Atlas** — cloud database
+- **GitHub** — source control and deployment integration
 
-Production environment variables:
+Production environment variables are configured through Vercel:
 
-    MONGODB_URI=your_production_mongodb_uri
-    AUTH_SECRET=your_production_auth_secret
+```env
+MONGODB_URI=your_production_mongodb_uri
+AUTH_SECRET=your_production_auth_secret
+```
 
-These values should be configured through the deployment platform's environment-variable settings.
+Production secrets are not stored in the GitHub repository.
 
-Never commit production secrets to GitHub.
+### Deployment workflow
+
+```text
+Local Development
+       ↓
+Test Application
+       ↓
+git add .
+       ↓
+git commit
+       ↓
+git push
+       ↓
+GitHub main
+       ↓
+Vercel Deployment
+       ↓
+Live ChronoTask
+```
+
+---
+
+## 🧠 Challenges & Solutions
+
+### Timer State Synchronization
+
+One of the main technical challenges was keeping the frontend timer state synchronized with the backend.
+
+A timer could be stopped successfully on the server while the frontend temporarily displayed the previous state.
+
+The solution was to treat the backend as the source of truth and periodically synchronize the frontend with:
+
+```text
+GET /api/tasks/timer/active
+```
+
+The stop flow was also updated to clear the client-side timer state after the server confirms the operation.
+
+This made the timer more reliable across refreshes, navigation, and multiple browser tabs.
+
+---
+
+## 🎤 Project Explanation
+
+ChronoTask can be summarized as:
+
+> **“A full-stack productivity application where users can manage tasks and track the actual time they spend working on them. I built the application end-to-end using Next.js, TypeScript, MongoDB, Mongoose and Auth.js. The timer uses persistent server-side time logs, while the dashboard calculates productivity statistics and weekly activity from real database records.”**
+
+### What I built
+
+- Frontend UI and responsive layouts
+- Authentication and signup flow
+- Protected REST-style APIs
+- MongoDB/Mongoose data models
+- Task CRUD operations
+- Persistent task timers
+- Time-log management
+- Timer synchronization
+- Dashboard aggregation logic
+- Productivity visualization
+- Vercel deployment
 
 ---
 
@@ -534,19 +749,22 @@ Potential future improvements include:
 
 ## 📌 Project Status
 
-ChronoTask currently provides the core functionality of a full-stack productivity and time-tracking application, including:
+**ChronoTask is a deployed full-stack productivity and time-tracking application.**
+
+Current functionality includes:
 
 - Authentication
 - Task management
 - Task authorization
 - Persistent time tracking
-- Multi-tab synchronization
+- Multi-tab timer synchronization
 - Dashboard analytics
 - Productivity visualization
 - Protected REST APIs
 - MongoDB persistence
+- Production deployment on Vercel
 
-The project is being prepared for production deployment.
+The application is actively being refined with additional UI and productivity features.
 
 ---
 
